@@ -1,0 +1,58 @@
+package sqlx
+
+import (
+	"testing"
+)
+
+const (
+	game = "localhost1"
+	log  = "localhost2"
+)
+
+func TestRegisterDB(t *testing.T) {
+	configs := map[string]Config{
+		game: {
+			DSN:          "root:123456@tcp(127.0.0.1:3306)/test?timeout=30s&charset=utf8mb4&parseTime=True&loc=Local",
+			MaxLifetime:  100,
+			MaxOpenConns: 100,
+			MaxIdleConns: 20,
+			MaxIdleTime:  3600,
+			Timeout:      30,
+		},
+		log: {
+			DSN:          "root:123456@tcp(127.0.0.1:3306)/unity?timeout=30s&charset=utf8mb4&parseTime=True&loc=Local",
+			MaxLifetime:  100,
+			MaxOpenConns: 100,
+			MaxIdleConns: 20,
+			MaxIdleTime:  3600,
+			Timeout:      30,
+		},
+	}
+	if err := RegisterDB(configs); err != nil {
+		println(err.Error())
+		t.Failed()
+		return
+	}
+	defer UnregisterDB()
+
+	conn, err := Get(game)
+	if err != nil {
+		println(err.Error())
+		t.Failed()
+		return
+	}
+
+	var (
+		firstName, lastName string
+	)
+	row := conn.SelectRow("SELECT first_name,last_name FROM person WHERE id=?", []interface{}{1})
+	if err = row.Scan(&firstName, &lastName); err != nil {
+		println(err.Error())
+		t.Failed()
+		return
+	}
+
+	println(firstName, lastName)
+}
+
+func TestValidate(t *testing.T) {}
