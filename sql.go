@@ -128,3 +128,18 @@ func (c *Conn) SelectRow(query string, args []interface{}) *sql.Row {
 func (c *Conn) SelectRows(query string, args []interface{}) (*sql.Rows, error) {
 	return c.db.Query(query, args...)
 }
+
+// Ping ping check
+func (c *Conn) Ping() error {
+	return c.db.Ping()
+}
+
+// Stats 连接状态数据
+func (c *Conn) Stats() sql.DBStats {
+	return c.db.Stats()
+}
+
+// Close 关闭连接
+func (c *Conn) Close() error {
+	return Close(c.db)
+}
