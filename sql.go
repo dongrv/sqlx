@@ -13,6 +13,8 @@ var (
 	ErrConnName   = errors.New("connection is not registered")
 )
 
+const driverDB = `mysql`
+
 // Config 数据库连接配置
 type Config struct {
 	DSN          string // 连接信息：用户名:密码@tcp(IP:端口)/表名?timeout=30s&charset=utf8mb4&parseTime=True&loc=Local
@@ -20,7 +22,6 @@ type Config struct {
 	MaxIdleConns int    // 最大闲置连接数
 	MaxLifetime  int64  // 可重复使用的生命周期
 	MaxIdleTime  int    // maximum amount of time a connection may be idle before being closed
-	Timeout      int64  // 连接超时时间
 }
 
 func (c Config) Validate() bool {
@@ -60,7 +61,7 @@ func UnregisterDB() {
 }
 
 func Open(c Config) (*sql.DB, error) {
-	conn, err := sql.Open(`mysql`, c.DSN)
+	conn, err := sql.Open(driverDB, c.DSN)
 	if err != nil {
 		return nil, err
 	}

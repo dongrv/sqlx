@@ -17,7 +17,6 @@ func TestRegisterDB(t *testing.T) {
 			MaxOpenConns: 100,
 			MaxIdleConns: 20,
 			MaxIdleTime:  3600,
-			Timeout:      30,
 		},
 		log: {
 			DSN:          "root:123456@tcp(127.0.0.1:3306)/unity?timeout=30s&charset=utf8mb4&parseTime=True&loc=Local",
@@ -25,7 +24,6 @@ func TestRegisterDB(t *testing.T) {
 			MaxOpenConns: 100,
 			MaxIdleConns: 20,
 			MaxIdleTime:  3600,
-			Timeout:      30,
 		},
 	}
 	if err := RegisterDB(configs); err != nil {
