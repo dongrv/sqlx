@@ -55,10 +55,7 @@ func UnregisterDB() {
 	locker.Lock()
 	defer locker.Unlock()
 	for _, db := range pool {
-		if db != nil {
-			_ = db.Close()
-			db = nil
-		}
+		_ = Close(db)
 	}
 }
 
@@ -72,6 +69,15 @@ func Open(c Config) (*sql.DB, error) {
 	conn.SetConnMaxLifetime(time.Duration(c.MaxLifetime))
 	conn.SetConnMaxIdleTime(time.Duration(c.MaxIdleTime))
 	return conn, nil
+}
+
+func Close(db *sql.DB) error {
+	if db != nil {
+		err := db.Close()
+		db = nil
+		return err
+	}
+	return nil
 }
 
 func Get(connName string) (*Conn, error) {

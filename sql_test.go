@@ -56,3 +56,12 @@ func TestRegisterDB(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {}
+
+func TestKeyValue_Split(t *testing.T) {
+	kv := KeyValue{"Field1": 1, "Field2": "2", "Field3": 0.1}
+	f, p, a := kv.Split()
+	t.Logf("split test:placeholder=%s filed=%s a=%v\n", p, f, a)
+
+	f, a = kv.SplitWrap()
+	t.Logf("splitwrap test: filed=%s a=%v\n", f, a)
+}
