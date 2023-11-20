@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrUnregister = errors.New("unregistered database connections")
-	ErrConnName   = errors.New("connection name is empty")
+	ErrUnregister = errors.New("unregistered database connection")
+	ErrConnName   = errors.New("connection is not registered")
 )
 
 // Config 数据库连接配置
