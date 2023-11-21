@@ -121,13 +121,18 @@ func (c *Conn) Update(query string, args []interface{}) (sql.Result, error) {
 	return c.execute(query, args)
 }
 
-func (c *Conn) SelectRow(query string, args []interface{}) *sql.Row {
+func (c *Conn) QueryRow(query string, args []interface{}) *sql.Row {
 	return c.db.QueryRow(query, args...)
 }
 
-// SelectRows 查询多行，调用方需要手动关闭资源句柄 rows.Close()
-func (c *Conn) SelectRows(query string, args []interface{}) (*sql.Rows, error) {
+// QueryRows 查询多行，调用方需要手动关闭资源句柄 rows.Close()
+func (c *Conn) QueryRows(query string, args []interface{}) (*sql.Rows, error) {
 	return c.db.Query(query, args...)
+}
+
+// Do 执行SQL
+func (c *Conn) Do(m *Meta) Done {
+	return m.Do(c)
 }
 
 // Ping ping check
