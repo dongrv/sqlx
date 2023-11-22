@@ -102,7 +102,7 @@ func (m *Meta) Do(conn *Conn) (done Done) {
 		done.row = conn.QueryRow(fmt.Sprintf(rawQuery, search, m.Table, fields), args)
 		return
 	case D:
-		field, args := m.Values.SplitWrap()
+		field, args := m.Where.SplitWrap()
 		done.result, done.Err = conn.Delete(fmt.Sprintf(rawDelete, m.Table, field), args)
 		return
 	}
