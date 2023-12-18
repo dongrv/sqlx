@@ -10,7 +10,7 @@ import (
 
 var (
 	ErrResultNil   = errors.New("sqlx:result is nil")
-	ErrInvalidCurd = errors.New("sqlx:invalid curd")
+	ErrInvalidCurd = errors.New("sqlx:invalid operation")
 )
 
 type Curd uint8 // 操作码：新增、更新、查询、删除
@@ -38,7 +38,7 @@ type Meta struct {
 	Values, Where KeyValue // 更新map，查询条件map
 }
 
-func WrapC(curd Curd) OptionFunc {
+func WrapOp(curd Curd) OptionFunc {
 	return func(m *Meta) {
 		m.Op = curd
 	}
