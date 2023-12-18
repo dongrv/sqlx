@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 var (
@@ -31,15 +32,15 @@ type OptionFunc func(*Meta)
 
 // Meta 执行单元
 type Meta struct {
-	C             Curd
-	Table         string
+	Op            Curd     // 操作：增改查删
+	Table         string   // 表名
 	Query         Query    // 查询字段
 	Values, Where KeyValue // 更新map，查询条件map
 }
 
 func WrapC(curd Curd) OptionFunc {
 	return func(m *Meta) {
-		m.C = curd
+		m.Op = curd
 	}
 }
 
@@ -78,16 +79,19 @@ func NewMeta(fs ...OptionFunc) *Meta {
 
 // Do 执行
 func (m *Meta) Do(conn *Conn) (done Done) {
-	switch m.C {
+	t := time.Now()
+	defer func() { done.Runtime = time.Since(t).Seconds() }()
+
+	switch m.Op {
 	case C:
-		field, pd, args := m.Values.Split()
-		done.result, done.Err = conn.Insert(fmt.Sprintf(rawInsert, m.Table, field, pd), args)
+		fields, pd, args := m.Values.Split()
+		done.result, done.Err = conn.Create(fmt.Sprintf(rawInsert, m.Table, fields, pd), args)
 		return
 	case U:
-		upFields, upArgs := m.Values.SplitWrap()
-		condFields, condArgs := m.Where.SplitWrap()
-		merge := append(upArgs, condArgs...)
-		done.result, done.Err = conn.Insert(fmt.Sprintf(rawUpdate, m.Table, upFields, condFields), merge)
+		fields, args := m.Values.SplitWrap()
+		where, whereArgs := m.Where.SplitWrap()
+		merge := append(args, whereArgs...)
+		done.result, done.Err = conn.Update(fmt.Sprintf(rawUpdate, m.Table, fields, where), merge)
 		return
 	case R:
 		var search = `*`
@@ -112,10 +116,11 @@ func (m *Meta) Do(conn *Conn) (done Done) {
 
 // Done 执行结果
 type Done struct {
-	result sql.Result
-	row    *sql.Row
-	rows   *sql.Rows
-	Err    error
+	result  sql.Result
+	row     *sql.Row
+	rows    *sql.Rows
+	Err     error
+	Runtime float64 // 运行时间：秒
 }
 
 func (d Done) LastInsertId() (int64, error) {

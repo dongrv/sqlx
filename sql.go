@@ -109,18 +109,22 @@ func (c *Conn) execute(query string, args []interface{}) (sql.Result, error) {
 	return stat.Exec(args...)
 }
 
-func (c *Conn) Insert(query string, args []interface{}) (sql.Result, error) {
+// Create 创建/插入行
+func (c *Conn) Create(query string, args []interface{}) (sql.Result, error) {
 	return c.execute(query, args)
 }
 
+// Delete 删除
 func (c *Conn) Delete(query string, args []interface{}) (sql.Result, error) {
 	return c.execute(query, args)
 }
 
+// Update 更新
 func (c *Conn) Update(query string, args []interface{}) (sql.Result, error) {
 	return c.execute(query, args)
 }
 
+// QueryRow 查询行
 func (c *Conn) QueryRow(query string, args []interface{}) *sql.Row {
 	return c.db.QueryRow(query, args...)
 }
