@@ -155,6 +155,11 @@ func CloseRows(rows *sql.Rows) {
 	}
 }
 
+// BeginTx 事务
+func BeginTx(conn *Conn) (*sql.Tx, error) {
+	return conn.db.Begin()
+}
+
 func (d Done) Error() error {
 	return d.Err
 }
