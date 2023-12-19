@@ -146,8 +146,12 @@ func (d Done) Rows() (*sql.Rows, error) {
 }
 
 func (d Done) CloseRows() {
-	if d.rows != nil {
-		_ = d.rows.Close()
+	CloseRows(d.rows)
+}
+
+func CloseRows(rows *sql.Rows) {
+	if rows != nil {
+		_ = rows.Close()
 	}
 }
 

@@ -81,7 +81,7 @@ func Close(db *sql.DB) error {
 	return nil
 }
 
-func Get(connName string) (*Conn, error) {
+func DB(connName string) (*Conn, error) {
 	if connName == "" {
 		return nil, ErrConnName
 	}
