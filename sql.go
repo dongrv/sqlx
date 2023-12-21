@@ -153,3 +153,8 @@ func (c *Conn) Stats() sql.DBStats {
 func (c *Conn) Close() error {
 	return Close(c.db)
 }
+
+// BeginTx 事务
+func (c *Conn) BeginTx() (*sql.Tx, error) {
+	return c.db.Begin()
+}

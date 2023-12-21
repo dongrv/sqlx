@@ -62,6 +62,10 @@ func Do() error {
 		return err
 	}
 
+	if err = runTx(conn); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -126,4 +130,29 @@ func queryRows(conn *sqlx.Conn) error {
 	}
 
 	return nil
+}
+
+// 运行事务
+func runTx(conn *sqlx.Conn) error {
+	tx, err := conn.BeginTx()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Rollback()
+	}()
+
+	stat, err := tx.Prepare("UPDATE profile SET  last_name = ? WHERE id=?")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = stat.Close()
+	}()
+
+	_, err = stat.Exec("Bill", 1)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
