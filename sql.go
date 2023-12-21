@@ -1,6 +1,7 @@
 package sqlx
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
@@ -154,7 +155,34 @@ func (c *Conn) Close() error {
 	return Close(c.db)
 }
 
-// BeginTx 事务
-func (c *Conn) BeginTx() (*sql.Tx, error) {
-	return c.db.Begin()
+// BeginTx 启动带上下文的事务
+func (c *Conn) BeginTx(ctx context.Context) (*sql.Tx, error) {
+	return c.db.BeginTx(func() context.Context {
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		return ctx
+	}(), nil)
+}
+
+// ExecTx 执行完整事务
+func (c *Conn) ExecTx(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	tx, err := c.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	stat, err := tx.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = stat.Close() }()
+
+	result, err := stat.Exec(args...)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Commit()
+	return result, err
 }
