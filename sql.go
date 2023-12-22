@@ -186,3 +186,43 @@ func (c *Conn) ExecTx(ctx context.Context, query string, args ...interface{}) (s
 	err = tx.Commit()
 	return result, err
 }
+
+type Tx struct {
+	Query string
+	Args  []interface{}
+}
+
+// ExecBatchTx 批量执行完整事务
+func (c *Conn) ExecBatchTx(ctx context.Context, txs ...Tx) (sql.Result, error) {
+	tx, err := c.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if len(txs) == 0 {
+		return nil, errors.New("empty submit tx")
+	}
+
+	var (
+		result sql.Result
+		stat   *sql.Stmt
+	)
+
+	for _, t := range txs {
+		stat, err = tx.Prepare(t.Query)
+		if err != nil {
+			return nil, err
+		}
+
+		result, err = stat.Exec(t.Args...)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = stat.Close()
+	}
+
+	err = tx.Commit()
+	return result, err
+}
