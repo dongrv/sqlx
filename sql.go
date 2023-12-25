@@ -103,9 +103,7 @@ func (c *Conn) execute(query string, args []interface{}) (sql.Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		_ = stat.Close()
-	}()
+	defer func() { _ = stat.Close() }()
 
 	return stat.Exec(args...)
 }
