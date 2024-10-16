@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"github.com/dongrv/trace"
 	_ "github.com/go-sql-driver/mysql"
 	"sync"
 	"time"
@@ -227,4 +229,142 @@ func (c *Conn) ExecBatchTx(ctx context.Context, txs ...Tx) (sql.Result, error) {
 
 	err = tx.Commit()
 	return result, err
+}
+
+//-------------------------------------------------
+//          提供一组携带追踪链的便捷调用方法集.         |
+//-------------------------------------------------
+
+func (c *Conn) TraceExec(ctx *trace.Context, query string, args []interface{}) (result sql.Result, err error) {
+	var (
+		rowsAffected int64
+		newCtx       *trace.Context
+		exists       = ctx == nil
+	)
+	if exists {
+		newCtx = ctx.New(driverDB).Set(query, args)
+		defer func() {
+			detail(newCtx, query, args, err)
+			newCtx.SetKV("rows-affected", rowsAffected).Stop()
+		}()
+	}
+	result, err = c.db.Exec(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		goto end
+	}
+	rowsAffected, err = result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+end:
+	return result, err
+}
+
+func (c *Conn) TraceInsert(ctx *trace.Context, query string, args []interface{}) (sql.Result, error) {
+	return c.TraceExec(ctx, query, args)
+}
+
+func (c *Conn) TraceDelete(ctx *trace.Context, query string, args []interface{}) (sql.Result, error) {
+	return c.TraceExec(ctx, query, args)
+}
+
+func (c *Conn) TraceUpdate(ctx *trace.Context, query string, args []interface{}) (result sql.Result, err error) {
+	return c.TraceExec(ctx, query, args)
+}
+
+func (c *Conn) TraceSelect(ctx *trace.Context, query string, args []interface{}) *sql.Row {
+	var (
+		err    error
+		newCtx *trace.Context
+	)
+	if ctx == nil {
+		newCtx = ctx.New(driverDB).Set(query, args)
+		defer func() {
+			detail(newCtx, query, args, err)
+			newCtx.Stop()
+		}()
+	}
+	row := c.db.QueryRow(query, args...)
+	if row == nil {
+		return &sql.Row{}
+	}
+	err = row.Err()
+	return row
+}
+
+// TraceSelectBatch 批量查询，注意：调用方需要手动释放资源：defer rows.Close()
+func (c *Conn) TraceSelectBatch(ctx *trace.Context, query string, args []interface{}) *sql.Rows {
+	var (
+		err    error
+		newCtx *trace.Context
+		rows   *sql.Rows
+	)
+	if ctx == nil {
+		newCtx = ctx.New(driverDB).Set(query, args)
+		defer func() {
+			detail(newCtx, query, args, err)
+			newCtx.Stop()
+		}()
+	}
+	rows, err = c.db.Query(query, args...)
+	if err != nil || rows == nil {
+		return nil
+	}
+	err = rows.Err()
+	return rows
+}
+
+func (c *Conn) EasyInsert(ctx *trace.Context, table string, kv KeyValue) (sql.Result, error) {
+	if len(kv) == 0 {
+		return nil, errors.New("invalid insert values")
+	}
+	fields, placeholders, args := kv.Split()
+	return c.TraceExec(ctx, fmt.Sprintf(rawInsert, table, fields, placeholders), args)
+}
+
+func (c *Conn) EasyDelete(ctx *trace.Context, table string, where KeyValue) (sql.Result, error) {
+	if len(where) == 0 {
+		return nil, errors.New("invalid delete condition")
+	}
+	fields, args := where.SplitWrap()
+	return c.TraceExec(ctx, fmt.Sprintf(rawDelete, table, fields), args)
+}
+
+func (c *Conn) EasyUpdate(ctx *trace.Context, table string, kv, where KeyValue) (sql.Result, error) {
+	if len(kv) == 0 || len(where) == 0 {
+		return nil, errors.New("invalid update KeyValue")
+	}
+	setFields, setArgs := kv.SplitWrap()
+	whereFields, whereArgs := where.SplitWrap()
+	setArgs = append(setArgs, whereArgs...)
+	return c.TraceUpdate(ctx, fmt.Sprintf(rawUpdate, table, setFields, whereFields), setArgs)
+}
+
+func (c *Conn) EasySelect(ctx *trace.Context, table string, fields []string, where KeyValue) *sql.Row {
+	if len(fields) == 0 || len(where) == 0 {
+		return &sql.Row{} // 保证非空指针
+	}
+	whereFields, whereArgs := where.SplitWrap()
+	query := fmt.Sprintf(rawQuery, Fields(fields).Join(), table, whereFields)
+	return c.TraceSelect(ctx, query, whereArgs)
+}
+
+// EasySelectBatch 批量查询，注意：调用方需要手动释放defer rows.Close()
+func (c *Conn) EasySelectBatch(ctx *trace.Context, table string, fields []string, where KeyValue) *sql.Rows {
+	if len(fields) == 0 {
+		return nil
+	}
+	fieldsW, args := where.SplitWrap()
+	query := fmt.Sprintf(rawQuery, Fields(fields).Join(), table, fieldsW)
+	return c.TraceSelectBatch(ctx, query, args)
+}
+
+func detail(ctx *trace.Context, query string, args []interface{}, err error) {
+	if ctx == nil || err == nil {
+		return
+	}
+	ctx.SetKV("err", err.Error()).SetKV("sql", FormatString(query, args))
 }

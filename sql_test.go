@@ -8,7 +8,7 @@ const (
 	game = "localhost1"
 )
 
-var configs = map[string]Config{
+var configs = ConfigMap{
 	game: {
 		DSN:          "root:123456@tcp(127.0.0.1:3306)/test?timeout=30s&charset=utf8mb4&parseTime=True&loc=Local",
 		MaxLifetime:  100,
@@ -32,7 +32,4 @@ func TestRegisterDB(t *testing.T) {
 	if err = conn.Ping(); err != nil {
 		t.Fatal(err)
 	}
-
 }
-
-func TestValidate(t *testing.T) {}

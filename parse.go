@@ -2,6 +2,8 @@ package sqlx
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 )
 
 type Operator interface {
@@ -54,4 +56,14 @@ func (kv KeyValue) SplitWrap() (string, []interface{}) {
 		args = append(args, v)
 	}
 	return ps[:len(ps)-1], args
+}
+
+type Fields []string // 提供安全的字段拼接
+
+func (f Fields) Join() string { return "`" + strings.Join(f, "`,`") + "`" }
+
+// FormatString 格式化为完整字符串
+func FormatString(query string, args []interface{}) string {
+	query = strings.ReplaceAll(query, "?", "%v")
+	return fmt.Sprintf(query, args...)
 }
