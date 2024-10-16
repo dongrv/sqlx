@@ -35,10 +35,10 @@ type Profile struct {
 }
 
 func Do() error {
-	if err := sqlx.RegisterDB(configs); err != nil {
+	if err := sqlx.New(configs); err != nil {
 		return err
 	}
-	defer sqlx.UnregisterDB()
+	defer sqlx.CloseAll()
 
 	conn, err := sqlx.DB(gameDB)
 	if err != nil {

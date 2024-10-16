@@ -26,20 +26,24 @@ type Config struct {
 }
 
 func (c Config) Validate() bool {
-	// TODO
-	return true
+	return c.DSN != "" && c.MaxOpenConns >= 0 && c.MaxIdleConns >= 0 && c.MaxLifetime >= 0 && c.MaxIdleTime >= 0
 }
 
 var (
-	locker sync.RWMutex
-	pool   = make(map[string]*sql.DB) // 数据库连接池
+	poolLock sync.RWMutex
+	connPool = make(map[string]*sql.DB) // 数据库连接池
 )
 
-// RegisterDB 注册数据库连接
-func RegisterDB(dbConfigs map[string]Config) error {
-	locker.Lock()
-	defer locker.Unlock()
-	for s, config := range dbConfigs {
+// New 注册数据库连接
+func New(configs ConfigMap) error {
+	poolLock.Lock()
+	defer poolLock.Unlock()
+
+	if !configs.Validate() {
+		return errors.New("incorrect config parameters")
+	}
+
+	for connName, config := range configs {
 		conn, err := Open(config)
 		if err != nil {
 			return err
@@ -47,16 +51,16 @@ func RegisterDB(dbConfigs map[string]Config) error {
 		if err = conn.Ping(); err != nil {
 			return err
 		}
-		pool[s] = conn
+		connPool[connName] = conn
 	}
 	return nil
 }
 
-// UnregisterDB 注销数据库连接
-func UnregisterDB() {
-	locker.Lock()
-	defer locker.Unlock()
-	for _, db := range pool {
+// CloseAll 关闭所有连接
+func CloseAll() {
+	poolLock.Lock()
+	defer poolLock.Unlock()
+	for _, db := range connPool {
 		_ = Close(db)
 	}
 }
@@ -86,9 +90,9 @@ func DB(connName string) (*Conn, error) {
 	if connName == "" {
 		return nil, ErrConnName
 	}
-	locker.RLock()
-	defer locker.RUnlock()
-	if p, ok := pool[connName]; ok {
+	poolLock.RLock()
+	defer poolLock.RUnlock()
+	if p, ok := connPool[connName]; ok {
 		return &Conn{db: p}, nil
 	}
 	return nil, ErrUnregister

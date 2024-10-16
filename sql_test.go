@@ -19,11 +19,11 @@ var configs = map[string]Config{
 }
 
 func TestRegisterDB(t *testing.T) {
-	if err := RegisterDB(configs); err != nil {
+	if err := New(configs); err != nil {
 		t.Fatal(err)
 		return
 	}
-	defer UnregisterDB()
+	defer CloseAll()
 
 	conn, err := DB(game)
 	if err != nil {
