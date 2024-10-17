@@ -232,16 +232,15 @@ func (c *Conn) ExecBatchTx(ctx context.Context, txs ...Tx) (sql.Result, error) {
 }
 
 //-------------------------------------------------
-//          提供一组携带追踪链的便捷调用方法集.      |
+//            Convenient call method              |
 //-------------------------------------------------
 
 func (c *Conn) TraceExec(ctx *trace.Context, query string, args []interface{}) (result sql.Result, err error) {
 	var (
 		rowsAffected int64
 		newCtx       *trace.Context
-		exists       = ctx == nil
 	)
-	if exists {
+	if ctx != nil {
 		newCtx = ctx.New(driverDB).Set(query, args)
 		defer func() {
 			detail(newCtx, query, args, err)
@@ -252,14 +251,10 @@ func (c *Conn) TraceExec(ctx *trace.Context, query string, args []interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		goto end
-	}
 	rowsAffected, err = result.RowsAffected()
 	if err != nil {
 		return nil, err
 	}
-end:
 	return result, err
 }
 
@@ -280,7 +275,7 @@ func (c *Conn) TraceSelect(ctx *trace.Context, query string, args []interface{})
 		err    error
 		newCtx *trace.Context
 	)
-	if ctx == nil {
+	if ctx != nil {
 		newCtx = ctx.New(driverDB).Set(query, args)
 		defer func() {
 			detail(newCtx, query, args, err)
@@ -302,7 +297,7 @@ func (c *Conn) TraceSelectBatch(ctx *trace.Context, query string, args []interfa
 		newCtx *trace.Context
 		rows   *sql.Rows
 	)
-	if ctx == nil {
+	if ctx != nil {
 		newCtx = ctx.New(driverDB).Set(query, args)
 		defer func() {
 			detail(newCtx, query, args, err)
