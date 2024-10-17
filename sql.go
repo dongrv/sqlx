@@ -232,7 +232,7 @@ func (c *Conn) ExecBatchTx(ctx context.Context, txs ...Tx) (sql.Result, error) {
 }
 
 //-------------------------------------------------
-//          提供一组携带追踪链的便捷调用方法集.         |
+//          提供一组携带追踪链的便捷调用方法集.      |
 //-------------------------------------------------
 
 func (c *Conn) TraceExec(ctx *trace.Context, query string, args []interface{}) (result sql.Result, err error) {
