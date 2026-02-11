@@ -12,7 +12,6 @@ import (
 
 func main() {
 	fmt.Println("📚 SQLx 完整示例程序")
-	fmt.Println("====================\n")
 
 	fmt.Println("1. 基础示例演示:")
 	fmt.Println("----------------")
