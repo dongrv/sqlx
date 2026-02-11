@@ -311,13 +311,13 @@ func (cm ConfigMap) Validate() error {
 // Executor defines the interface for executing SQL operations.
 type Executor interface {
 	// Exec executes a query without returning any rows.
-	Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Exec(ctx context.Context, query string, args ...any) (sql.Result, error)
 
 	// Query executes a query that returns rows.
-	Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	Query(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 
 	// QueryRow executes a query that is expected to return at most one row.
-	QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row
+	QueryRow(ctx context.Context, query string, args ...any) *sql.Row
 
 	// BeginTx starts a transaction.
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
@@ -328,19 +328,19 @@ type CRUDExecutor interface {
 	Executor
 
 	// Insert inserts a row into the specified table.
-	Insert(ctx context.Context, table string, data map[string]interface{}) (sql.Result, error)
+	Insert(ctx context.Context, table string, data map[string]any) (sql.Result, error)
 
 	// Update updates rows in the specified table.
-	Update(ctx context.Context, table string, data, where map[string]interface{}) (sql.Result, error)
+	Update(ctx context.Context, table string, data, where map[string]any) (sql.Result, error)
 
 	// Delete deletes rows from the specified table.
-	Delete(ctx context.Context, table string, where map[string]interface{}) (sql.Result, error)
+	Delete(ctx context.Context, table string, where map[string]any) (sql.Result, error)
 
 	// Select executes a SELECT query.
-	Select(ctx context.Context, table string, columns []string, where map[string]interface{}) (*sql.Rows, error)
+	Select(ctx context.Context, table string, columns []string, where map[string]any) (*sql.Rows, error)
 
 	// SelectOne executes a SELECT query that returns at most one row.
-	SelectOne(ctx context.Context, table string, columns []string, where map[string]interface{}) *sql.Row
+	SelectOne(ctx context.Context, table string, columns []string, where map[string]any) *sql.Row
 }
 
 // DB represents a database connection with enhanced functionality.
@@ -382,7 +382,7 @@ func NewDB(config Config) (*DB, error) {
 }
 
 // Exec executes a query without returning any rows.
-func (db *DB) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if db.db == nil {
 		return nil, ErrConnectionClosed
 	}
@@ -398,7 +398,7 @@ func (db *DB) Exec(ctx context.Context, query string, args ...interface{}) (sql.
 }
 
 // Query executes a query that returns rows.
-func (db *DB) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (db *DB) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	if db.db == nil {
 		return nil, ErrConnectionClosed
 	}
@@ -414,7 +414,7 @@ func (db *DB) Query(ctx context.Context, query string, args ...interface{}) (*sq
 }
 
 // QueryRow executes a query that is expected to return at most one row.
-func (db *DB) QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
 	if db.db == nil || query == "" {
 		// Return a row that will error when scanned
 		return &sql.Row{}
@@ -468,7 +468,7 @@ func (db *DB) Transaction(ctx context.Context, fn func(*sql.Tx) error, opts *sql
 }
 
 // Insert inserts a row into the specified table.
-func (db *DB) Insert(ctx context.Context, table string, data map[string]interface{}) (sql.Result, error) {
+func (db *DB) Insert(ctx context.Context, table string, data map[string]any) (sql.Result, error) {
 	if table == "" {
 		return nil, fmt.Errorf("%w: table name cannot be empty", ErrInvalidArguments)
 	}
@@ -498,7 +498,7 @@ func (db *DB) Insert(ctx context.Context, table string, data map[string]interfac
 }
 
 // Update updates rows in the specified table.
-func (db *DB) Update(ctx context.Context, table string, data, where map[string]interface{}) (sql.Result, error) {
+func (db *DB) Update(ctx context.Context, table string, data, where map[string]any) (sql.Result, error) {
 	if table == "" {
 		return nil, fmt.Errorf("%w: table name cannot be empty", ErrInvalidArguments)
 	}
@@ -538,7 +538,7 @@ func (db *DB) Update(ctx context.Context, table string, data, where map[string]i
 }
 
 // Delete deletes rows from the specified table.
-func (db *DB) Delete(ctx context.Context, table string, where map[string]interface{}) (sql.Result, error) {
+func (db *DB) Delete(ctx context.Context, table string, where map[string]any) (sql.Result, error) {
 	if table == "" {
 		return nil, fmt.Errorf("%w: table name cannot be empty", ErrInvalidArguments)
 	}
@@ -568,7 +568,7 @@ func (db *DB) Delete(ctx context.Context, table string, where map[string]interfa
 
 // Select executes a SELECT query.
 // Select selects rows from the specified table.
-func (db *DB) Select(ctx context.Context, table string, columns []string, where map[string]interface{}) (*sql.Rows, error) {
+func (db *DB) Select(ctx context.Context, table string, columns []string, where map[string]any) (*sql.Rows, error) {
 	if table == "" {
 		return nil, fmt.Errorf("%w: table name cannot be empty", ErrInvalidArguments)
 	}
@@ -600,7 +600,7 @@ func (db *DB) Select(ctx context.Context, table string, columns []string, where 
 
 // SelectOne executes a SELECT query that returns at most one row.
 // SelectOne selects a single row from the specified table.
-func (db *DB) SelectOne(ctx context.Context, table string, columns []string, where map[string]interface{}) *sql.Row {
+func (db *DB) SelectOne(ctx context.Context, table string, columns []string, where map[string]any) *sql.Row {
 	if table == "" {
 		return &sql.Row{}
 	}
@@ -683,10 +683,10 @@ func (db *DB) withTimeout(ctx context.Context, timeout time.Duration) (context.C
 // Helper functions for building SQL queries
 
 // buildInsertData builds INSERT query components.
-func buildInsertData(data map[string]interface{}) (columns []string, placeholders []string, args []interface{}) {
+func buildInsertData(data map[string]any) (columns []string, placeholders []string, args []any) {
 	columns = make([]string, 0, len(data))
 	placeholders = make([]string, 0, len(data))
-	args = make([]interface{}, 0, len(data))
+	args = make([]any, 0, len(data))
 
 	for column, value := range data {
 		columns = append(columns, escapeIdentifier(column))
@@ -698,10 +698,10 @@ func buildInsertData(data map[string]interface{}) (columns []string, placeholder
 }
 
 // buildInsertDataWithDriver builds INSERT query components with driver-specific escaping.
-func buildInsertDataWithDriver(driver Driver, data map[string]interface{}) (columns []string, placeholders []string, args []interface{}, err error) {
+func buildInsertDataWithDriver(driver Driver, data map[string]any) (columns []string, placeholders []string, args []any, err error) {
 	columns = make([]string, 0, len(data))
 	placeholders = make([]string, 0, len(data))
-	args = make([]interface{}, 0, len(data))
+	args = make([]any, 0, len(data))
 
 	for column, value := range data {
 		escaped, err := EscapeColumnName(driver, column)
@@ -719,9 +719,9 @@ func buildInsertDataWithDriver(driver Driver, data map[string]interface{}) (colu
 // buildSetClause builds SET clause for UPDATE queries.
 
 // buildWhereClauseWithDriver builds WHERE clause components with driver-specific escaping.
-func buildWhereClauseWithDriver(driver Driver, where map[string]interface{}) (clause string, args []interface{}, err error) {
+func buildWhereClauseWithDriver(driver Driver, where map[string]any) (clause string, args []any, err error) {
 	clauses := make([]string, 0, len(where))
-	args = make([]interface{}, 0, len(where))
+	args = make([]any, 0, len(where))
 
 	for column, value := range where {
 		escaped, err := EscapeColumnName(driver, column)
@@ -736,9 +736,9 @@ func buildWhereClauseWithDriver(driver Driver, where map[string]interface{}) (cl
 }
 
 // buildSetClauseWithDriver builds UPDATE SET clause components with driver-specific escaping.
-func buildSetClauseWithDriver(driver Driver, data map[string]interface{}) (clause string, args []interface{}, err error) {
+func buildSetClauseWithDriver(driver Driver, data map[string]any) (clause string, args []any, err error) {
 	clauses := make([]string, 0, len(data))
-	args = make([]interface{}, 0, len(data))
+	args = make([]any, 0, len(data))
 
 	for column, value := range data {
 		escaped, err := EscapeColumnName(driver, column)
@@ -753,13 +753,13 @@ func buildSetClauseWithDriver(driver Driver, data map[string]interface{}) (claus
 }
 
 // buildWhereClause builds WHERE clause for queries.
-func buildWhereClause(where map[string]interface{}) (string, []interface{}) {
+func buildWhereClause(where map[string]any) (string, []any) {
 	if len(where) == 0 {
 		return "1=1", nil
 	}
 
 	clauses := make([]string, 0, len(where))
-	args := make([]interface{}, 0, len(where))
+	args := make([]any, 0, len(where))
 
 	for column, value := range where {
 		clauses = append(clauses, fmt.Sprintf("%s = ?", escapeIdentifier(column)))
@@ -813,8 +813,8 @@ func escapeIdentifier(identifier string) string {
 	return escaped
 }
 
-// Map is a convenience type for map[string]interface{}.
-type Map map[string]interface{}
+// Map is a convenience type for map[string]any.
+type Map map[string]any
 
 // NewMap creates a new Map.
 func NewMap() Map {
@@ -822,13 +822,13 @@ func NewMap() Map {
 }
 
 // Set sets a key-value pair in the map and returns the map for chaining.
-func (m Map) Set(key string, value interface{}) Map {
+func (m Map) Set(key string, value any) Map {
 	m[key] = value
 	return m
 }
 
 // Get gets a value from the map.
-func (m Map) Get(key string) (interface{}, bool) {
+func (m Map) Get(key string) (any, bool) {
 	value, ok := m[key]
 	return value, ok
 }
@@ -848,8 +848,8 @@ func (m Map) Keys() []string {
 }
 
 // Values returns all values in the map.
-func (m Map) Values() []interface{} {
-	values := make([]interface{}, 0, len(m))
+func (m Map) Values() []any {
+	values := make([]any, 0, len(m))
 	for _, value := range m {
 		values = append(values, value)
 	}
@@ -866,7 +866,7 @@ func (m Map) Clone() Map {
 }
 
 // Where creates a WHERE clause map.
-func Where(conditions ...interface{}) Map {
+func Where(conditions ...any) Map {
 	if len(conditions)%2 != 0 {
 		panic("sqlx: Where conditions must be key-value pairs")
 	}
@@ -883,7 +883,7 @@ func Where(conditions ...interface{}) Map {
 }
 
 // Data creates a data map for INSERT or UPDATE operations.
-func Data(pairs ...interface{}) Map {
+func Data(pairs ...any) Map {
 	if len(pairs)%2 != 0 {
 		panic("sqlx: Data must be key-value pairs")
 	}
@@ -900,7 +900,7 @@ func Data(pairs ...interface{}) Map {
 }
 
 // ScanRow scans a single row into the provided destinations.
-func ScanRow(row *sql.Row, dest ...interface{}) error {
+func ScanRow(row *sql.Row, dest ...any) error {
 	if row == nil {
 		return fmt.Errorf("%w: row is nil", ErrInvalidArguments)
 	}
@@ -1283,7 +1283,7 @@ func SelectOne(ctx context.Context, name, table string, columns []string, where 
 }
 
 // Exec executes a query without returning any rows.
-func Exec(ctx context.Context, name, query string, args ...interface{}) (sql.Result, error) {
+func Exec(ctx context.Context, name, query string, args ...any) (sql.Result, error) {
 	db, err := GetDB(name)
 	if err != nil {
 		return nil, err
@@ -1292,7 +1292,7 @@ func Exec(ctx context.Context, name, query string, args ...interface{}) (sql.Res
 }
 
 // Query executes a query that returns rows.
-func Query(ctx context.Context, name, query string, args ...interface{}) (*sql.Rows, error) {
+func Query(ctx context.Context, name, query string, args ...any) (*sql.Rows, error) {
 	db, err := GetDB(name)
 	if err != nil {
 		return nil, err
@@ -1301,7 +1301,7 @@ func Query(ctx context.Context, name, query string, args ...interface{}) (*sql.R
 }
 
 // QueryRow executes a query that is expected to return at most one row.
-func QueryRow(ctx context.Context, name, query string, args ...interface{}) *sql.Row {
+func QueryRow(ctx context.Context, name, query string, args ...any) *sql.Row {
 	db, err := GetDB(name)
 	if err != nil {
 		// Return a row that will error when scanned

@@ -299,7 +299,7 @@ func TestColumnList(t *testing.T) {
 
 func TestQueryBuilderFunctions(t *testing.T) {
 	// Test BuildInsertQuery
-	insertData := map[string]interface{}{
+	insertData := map[string]any{
 		"name":  "John",
 		"email": "john@example.com",
 		"age":   30,
@@ -314,8 +314,8 @@ func TestQueryBuilderFunctions(t *testing.T) {
 	}
 
 	// Test BuildUpdateQuery
-	updateData := map[string]interface{}{"age": 31}
-	updateWhere := map[string]interface{}{"id": 1}
+	updateData := map[string]any{"age": 31}
+	updateWhere := map[string]any{"id": 1}
 	updateQuery, updateArgs := sqlx.BuildUpdateQuery("users", updateData, updateWhere)
 	expectedUpdateQuery := "UPDATE `users` SET `age` = ? WHERE `id` = ?"
 	if updateQuery != expectedUpdateQuery {
@@ -326,7 +326,7 @@ func TestQueryBuilderFunctions(t *testing.T) {
 	}
 
 	// Test BuildDeleteQuery
-	deleteWhere := map[string]interface{}{"id": 1}
+	deleteWhere := map[string]any{"id": 1}
 	deleteQuery, deleteArgs := sqlx.BuildDeleteQuery("users", deleteWhere)
 	expectedDeleteQuery := "DELETE FROM `users` WHERE `id` = ?"
 	if deleteQuery != expectedDeleteQuery {

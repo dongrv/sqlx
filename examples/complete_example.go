@@ -287,7 +287,7 @@ func demoAdvancedQueries() {
 	fmt.Println("\n2. 高级查询构建:")
 
 	// 构建 INSERT 查询
-	insertData := map[string]interface{}{
+	insertData := map[string]any{
 		"name":  "John",
 		"email": "john@example.com",
 		"age":   30,
@@ -298,8 +298,8 @@ func demoAdvancedQueries() {
 	fmt.Printf("  参数: %v\n", insertArgs)
 
 	// 构建 UPDATE 查询
-	updateData := map[string]interface{}{"age": 31}
-	updateWhere := map[string]interface{}{"id": 1}
+	updateData := map[string]any{"age": 31}
+	updateWhere := map[string]any{"id": 1}
 	updateQuery, updateArgs := sqlx.BuildUpdateQuery("users", updateData, updateWhere)
 	fmt.Printf("\n✅ UPDATE 查询:\n")
 	fmt.Printf("  SQL: %s\n", updateQuery)
@@ -307,7 +307,7 @@ func demoAdvancedQueries() {
 
 	// 构建 SELECT 查询
 	selectColumns := []string{"id", "name", "email"}
-	selectWhere := map[string]interface{}{"active": true}
+	selectWhere := map[string]any{"active": true}
 	selectQuery, selectArgs := sqlx.BuildSelectQuery("users", selectColumns, selectWhere)
 	fmt.Printf("\n✅ SELECT 查询:\n")
 	fmt.Printf("  SQL: %s\n", selectQuery)
@@ -547,7 +547,7 @@ func demoSQLInjectionProtection() {
 	fmt.Printf("\n✅ 安全查询构建示例:\n")
 
 	table := "users"
-	data := map[string]interface{}{
+	data := map[string]any{
 		"name":  "John Doe",
 		"email": "john@example.com",
 		"age":   30,

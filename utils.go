@@ -12,12 +12,12 @@ import (
 
 // RowScanner defines the interface for scanning a single row.
 type RowScanner interface {
-	Scan(dest ...interface{}) error
+	Scan(dest ...any) error
 }
 
 // RowsScanner defines the interface for scanning multiple rows.
 type RowsScanner interface {
-	Scan(dest ...interface{}) error
+	Scan(dest ...any) error
 	Next() bool
 	Err() error
 	Close() error
@@ -233,7 +233,7 @@ func (qr *QueryResult) GetLastInsertID() (int64, error) {
 }
 
 // ScanRow scans the row into the provided destinations.
-func (qr *QueryResult) ScanRow(dest ...interface{}) error {
+func (qr *QueryResult) ScanRow(dest ...any) error {
 	if qr.Row == nil {
 		return ErrInvalidOperation
 	}
@@ -286,7 +286,7 @@ func (b *Binder) WithUseFieldNames(use bool) *Binder {
 }
 
 // BindRow binds a single row to a struct.
-func (b *Binder) BindRow(rows RowScanner, dest interface{}) error {
+func (b *Binder) BindRow(rows RowScanner, dest any) error {
 	destVal := reflect.ValueOf(dest)
 	if destVal.Kind() != reflect.Ptr || destVal.IsNil() {
 		return fmt.Errorf("dest must be a non-nil pointer")
@@ -302,9 +302,9 @@ func (b *Binder) BindRow(rows RowScanner, dest interface{}) error {
 		return err
 	}
 
-	values := make([]interface{}, len(columns))
+	values := make([]any, len(columns))
 	for i := range values {
-		values[i] = new(interface{})
+		values[i] = new(any)
 	}
 
 	if err := rows.Scan(values...); err != nil {
@@ -315,7 +315,7 @@ func (b *Binder) BindRow(rows RowScanner, dest interface{}) error {
 }
 
 // BindRows binds multiple rows to a slice of structs.
-func (b *Binder) BindRows(rows RowsScanner, dest interface{}) error {
+func (b *Binder) BindRows(rows RowsScanner, dest any) error {
 	destVal := reflect.ValueOf(dest)
 	if destVal.Kind() != reflect.Ptr || destVal.IsNil() {
 		return fmt.Errorf("dest must be a non-nil pointer")
@@ -347,9 +347,9 @@ func (b *Binder) BindRows(rows RowsScanner, dest interface{}) error {
 
 	// Process rows
 	for rows.Next() {
-		values := make([]interface{}, len(columns))
+		values := make([]any, len(columns))
 		for i := range values {
-			values[i] = new(interface{})
+			values[i] = new(any)
 		}
 
 		if err := rows.Scan(values...); err != nil {
@@ -418,9 +418,9 @@ func (b *Binder) getColumns(structVal reflect.Value) ([]structField, error) {
 }
 
 // setValues sets values from the database into struct fields.
-func (b *Binder) setValues(structVal reflect.Value, fields []structField, values []interface{}) error {
+func (b *Binder) setValues(structVal reflect.Value, fields []structField, values []any) error {
 	for i, field := range fields {
-		rawValue := *(values[i].(*interface{}))
+		rawValue := *(values[i].(*any))
 		if rawValue == nil {
 			continue
 		}
@@ -451,7 +451,7 @@ type structField struct {
 }
 
 // convertValue converts a value from the database to the target type.
-func convertValue(src interface{}, targetType reflect.Type) (reflect.Value, error) {
+func convertValue(src any, targetType reflect.Type) (reflect.Value, error) {
 	srcVal := reflect.ValueOf(src)
 	srcType := srcVal.Type()
 
@@ -588,10 +588,10 @@ func ShouldRetry(err error) bool {
 }
 
 // BuildInsertQuery builds an INSERT query string.
-func BuildInsertQuery(table string, data map[string]interface{}) (string, []interface{}) {
+func BuildInsertQuery(table string, data map[string]any) (string, []any) {
 	columns := make([]string, 0, len(data))
 	placeholders := make([]string, 0, len(data))
-	args := make([]interface{}, 0, len(data))
+	args := make([]any, 0, len(data))
 
 	for column, value := range data {
 		columns = append(columns, escapeIdentifier(column))
@@ -609,7 +609,7 @@ func BuildInsertQuery(table string, data map[string]interface{}) (string, []inte
 }
 
 // BuildInsertQueryWithDriver builds an INSERT query string with driver-specific escaping.
-func BuildInsertQueryWithDriver(driver Driver, table string, data map[string]interface{}) (string, []interface{}, error) {
+func BuildInsertQueryWithDriver(driver Driver, table string, data map[string]any) (string, []any, error) {
 	escapedTable, err := EscapeTableName(driver, table)
 	if err != nil {
 		return "", nil, fmt.Errorf("escape table name %q: %w", table, err)
@@ -617,7 +617,7 @@ func BuildInsertQueryWithDriver(driver Driver, table string, data map[string]int
 
 	columns := make([]string, 0, len(data))
 	placeholders := make([]string, 0, len(data))
-	args := make([]interface{}, 0, len(data))
+	args := make([]any, 0, len(data))
 
 	for column, value := range data {
 		escapedCol, err := EscapeColumnName(driver, column)
@@ -639,9 +639,9 @@ func BuildInsertQueryWithDriver(driver Driver, table string, data map[string]int
 }
 
 // BuildUpdateQuery builds an UPDATE query string.
-func BuildUpdateQuery(table string, data, where map[string]interface{}) (string, []interface{}) {
+func BuildUpdateQuery(table string, data, where map[string]any) (string, []any) {
 	setClauses := make([]string, 0, len(data))
-	args := make([]interface{}, 0, len(data))
+	args := make([]any, 0, len(data))
 
 	for column, value := range data {
 		setClauses = append(setClauses, fmt.Sprintf("%s = ?", escapeIdentifier(column)))
@@ -664,14 +664,14 @@ func BuildUpdateQuery(table string, data, where map[string]interface{}) (string,
 }
 
 // BuildUpdateQueryWithDriver builds an UPDATE query string with driver-specific escaping.
-func BuildUpdateQueryWithDriver(driver Driver, table string, data, where map[string]interface{}) (string, []interface{}, error) {
+func BuildUpdateQueryWithDriver(driver Driver, table string, data, where map[string]any) (string, []any, error) {
 	escapedTable, err := EscapeTableName(driver, table)
 	if err != nil {
 		return "", nil, fmt.Errorf("escape table name %q: %w", table, err)
 	}
 
 	setClauses := make([]string, 0, len(data))
-	args := make([]interface{}, 0, len(data))
+	args := make([]any, 0, len(data))
 
 	for column, value := range data {
 		escapedCol, err := EscapeColumnName(driver, column)
@@ -702,9 +702,9 @@ func BuildUpdateQueryWithDriver(driver Driver, table string, data, where map[str
 }
 
 // BuildDeleteQuery builds a DELETE query string.
-func BuildDeleteQuery(table string, where map[string]interface{}) (string, []interface{}) {
+func BuildDeleteQuery(table string, where map[string]any) (string, []any) {
 	whereClauses := make([]string, 0, len(where))
-	args := make([]interface{}, 0, len(where))
+	args := make([]any, 0, len(where))
 
 	for column, value := range where {
 		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", escapeIdentifier(column)))
@@ -720,14 +720,14 @@ func BuildDeleteQuery(table string, where map[string]interface{}) (string, []int
 }
 
 // BuildDeleteQueryWithDriver builds a DELETE query string with driver-specific escaping.
-func BuildDeleteQueryWithDriver(driver Driver, table string, where map[string]interface{}) (string, []interface{}, error) {
+func BuildDeleteQueryWithDriver(driver Driver, table string, where map[string]any) (string, []any, error) {
 	escapedTable, err := EscapeTableName(driver, table)
 	if err != nil {
 		return "", nil, fmt.Errorf("escape table name %q: %w", table, err)
 	}
 
 	whereClauses := make([]string, 0, len(where))
-	args := make([]interface{}, 0, len(where))
+	args := make([]any, 0, len(where))
 
 	for column, value := range where {
 		escapedCol, err := EscapeColumnName(driver, column)
@@ -747,7 +747,7 @@ func BuildDeleteQueryWithDriver(driver Driver, table string, where map[string]in
 }
 
 // BuildSelectQuery builds a SELECT query string.
-func BuildSelectQuery(table string, columns []string, where map[string]interface{}) (string, []interface{}) {
+func BuildSelectQuery(table string, columns []string, where map[string]any) (string, []any) {
 	columnList := "*"
 	if len(columns) > 0 {
 		escaped := make([]string, len(columns))
@@ -758,7 +758,7 @@ func BuildSelectQuery(table string, columns []string, where map[string]interface
 	}
 
 	whereClauses := make([]string, 0, len(where))
-	args := make([]interface{}, 0, len(where))
+	args := make([]any, 0, len(where))
 
 	for column, value := range where {
 		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", escapeIdentifier(column)))
@@ -774,7 +774,7 @@ func BuildSelectQuery(table string, columns []string, where map[string]interface
 }
 
 // BuildSelectQueryWithDriver builds a SELECT query string with driver-specific escaping.
-func BuildSelectQueryWithDriver(driver Driver, table string, columns []string, where map[string]interface{}) (string, []interface{}, error) {
+func BuildSelectQueryWithDriver(driver Driver, table string, columns []string, where map[string]any) (string, []any, error) {
 	escapedTable, err := EscapeTableName(driver, table)
 	if err != nil {
 		return "", nil, fmt.Errorf("escape table name %q: %w", table, err)
@@ -794,7 +794,7 @@ func BuildSelectQueryWithDriver(driver Driver, table string, columns []string, w
 	}
 
 	whereClauses := make([]string, 0, len(where))
-	args := make([]interface{}, 0, len(where))
+	args := make([]any, 0, len(where))
 
 	for column, value := range where {
 		escapedCol, err := EscapeColumnName(driver, column)
@@ -1033,14 +1033,14 @@ func (cb *CaseBuilder) Build() string {
 // QueryLogger defines the interface for logging queries.
 type QueryLogger interface {
 	// LogQuery logs a query execution.
-	LogQuery(ctx context.Context, query string, args []interface{}, duration time.Duration, err error)
+	LogQuery(ctx context.Context, query string, args []any, duration time.Duration, err error)
 }
 
 // DefaultQueryLogger is a simple query logger that does nothing.
 type DefaultQueryLogger struct{}
 
 // LogQuery implements QueryLogger interface.
-func (l *DefaultQueryLogger) LogQuery(ctx context.Context, query string, args []interface{}, duration time.Duration, err error) {
+func (l *DefaultQueryLogger) LogQuery(ctx context.Context, query string, args []any, duration time.Duration, err error) {
 	// Default implementation does nothing
 }
 

@@ -237,7 +237,7 @@ All query building functions use safe identifier escaping:
 
 ```go
 // Safe INSERT query
-data := map[string]interface{}{
+data := map[string]any{
     "name":  "John Doe",
     "email": "john@example.com",
     "age":   30,
@@ -246,14 +246,14 @@ query, args, _ := sqlx.BuildInsertQueryWithDriver(sqlx.MySQL, "users", data)
 // Result: INSERT INTO `users` (`name`, `email`, `age`) VALUES (?, ?, ?)
 
 // Safe UPDATE query
-updateData := map[string]interface{}{"age": 31}
-where := map[string]interface{}{"id": 1}
+updateData := map[string]any{"age": 31}
+where := map[string]any{"id": 1}
 query, args, _ := sqlx.BuildUpdateQueryWithDriver(sqlx.MySQL, "users", updateData, where)
 // Result: UPDATE `users` SET `age` = ? WHERE `id` = ?
 
 // Safe SELECT query
 columns := []string{"id", "name", "email"}
-where := map[string]interface{}{"active": true}
+where := map[string]any{"active": true}
 query, args, _ := sqlx.BuildSelectQueryWithDriver(sqlx.MySQL, "users", columns, where)
 // Result: SELECT `id`, `name`, `email` FROM `users` WHERE `active` = ?
 ```
@@ -430,15 +430,15 @@ sqlx.Init(configs,
 
 ### Query Execution
 
-- `Exec(ctx Context, name, query string, args ...interface{}) (Result, error)`
-- `Query(ctx Context, name, query string, args ...interface{}) (*Rows, error)`
-- `QueryRow(ctx Context, name, query string, args ...interface{}) *Row`
+- `Exec(ctx Context, name, query string, args ...any) (Result, error)`
+- `Query(ctx Context, name, query string, args ...any) (*Rows, error)`
+- `QueryRow(ctx Context, name, query string, args ...any) *Row`
 - `Transaction(ctx Context, name string, fn func(*sql.Tx) error, opts *sql.TxOptions) error`
 
 ### Helper Functions
 
 - `Builder(table string) *QueryBuilder` - Create query builder
-- `ScanRow(row *Row, dest ...interface{}) error` - Scan single row
+- `ScanRow(row *Row, dest ...any) error` - Scan single row
 - `ScanRows(rows *Rows, fn func(*Rows) error) error` - Scan multiple rows
 - `WithRetry(name string, fn func(*DBConfig) error) error` - Execute with retry logic
 - `IsDuplicateError(err error) bool` - Check for duplicate entry errors
@@ -446,8 +446,8 @@ sqlx.Init(configs,
 
 ### Utility Functions
 
-- `Data(pairs ...interface{}) Map` - Create data map
-- `Where(conditions ...interface{}) Map` - Create where conditions
+- `Data(pairs ...any) Map` - Create data map
+- `Where(conditions ...any) Map` - Create where conditions
 - `NewColumnList(columns ...string) ColumnList` - Create column list
 
 ## Best Practices
