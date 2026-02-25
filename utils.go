@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 )
@@ -48,12 +49,7 @@ func (c *ColumnList) Remove(column string) {
 
 // Contains checks if the list contains a column.
 func (c ColumnList) Contains(column string) bool {
-	for _, col := range c {
-		if col == column {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c, column)
 }
 
 // String returns the columns as a comma-separated string.
